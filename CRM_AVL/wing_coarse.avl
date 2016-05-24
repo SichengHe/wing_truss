@@ -1,0 +1,45 @@
+Wing
+0.8                      Mach
+0     0     0.0          iYsym  iZsym  Zsym
+#594720 275.80  2313.5          Sref   Cref   Bref   reference area, chord, span [in]
+383.6895552 7.00532  58.762          Sref   Cref   Bref   reference area, chord, span [m]
+0.0 0.0   0.0          Xref   Yref   Zref   moment reference location (arb.)
+0.0                    CDoref
+#
+#==============================================================
+#
+SURFACE
+WING
+5  0.0  16  0.0  !  Nchord   Cspace   Nspan  Sspace
+#
+# reflect image wing about y=0 plane
+YDUPLICATE
+     0.00000 
+#
+# twist angle bias for whole surface
+ANGLE
+     0.00000    
+#
+# x,y,z bias for whole surface
+TRANSLATE
+-22.9691 0 -4.4228
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION
+#  [in]
+#  904.294 0 174.126 536.181 6.71
+# [m]
+22.9691 0 4.4228 13.6190 6.71
+#-----------------------
+SECTION
+# [in]
+#  1225.82 427.999  181.071   285.782  0.7635
+# [m]
+31.1358 10.8712 4.5992 7.2589 0.7635
+#-----------------------
+SECTION
+# [in]
+#    1780.737 1156.753 263.827 107.4 -3.75
+# [m]
+45.2307 29.3815 6.7012 2.7280 -3.75
+#==============================================================
