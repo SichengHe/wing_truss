@@ -35,7 +35,7 @@ surfs.append(xyz[ 0, :, :, :])
 surfs.append(xyz[-1, :, :, :])
 tecwrite.write_surf_multi('surf.dat', surfs)
 
-writeBDF('mesh.bdf', nodes, bars+1)
+writeBDF('output/mesh.bdf', nodes, bars+1)
 
 
 
@@ -62,7 +62,7 @@ surfs.append(xyz[ 0, :, :, :])
 surfs.append(xyz[-1, :, :, :])
 tecwrite.write_surf_multi('surf2.dat', surfs)
 
-writeBDF('mesh2.bdf', nodes + sol.reshape(nodes.shape), bars+1)
+writeBDF('output/mesh2.bdf', nodes + sol.reshape(nodes.shape), bars+1)
 
 
 
@@ -105,5 +105,5 @@ for i in range(numx):
     sol2_x.insert(0,loc_mat)
     sol2[i] = sol2_x
 sol2 = numpy.asarray(sol2)
-writeBDF('mesh3.bdf', nodes + sol2.reshape(nodes.shape), bars+1)
+writeBDF('output/mesh3.bdf', nodes + sol2.reshape(nodes.shape), bars+1)
 Kmat1 = Kmat.todense()
