@@ -33,7 +33,7 @@ surfs.append(xyz[:,  0, :, :])
 surfs.append(xyz[:, -1, :, :])
 surfs.append(xyz[ 0, :, :, :])
 surfs.append(xyz[-1, :, :, :])
-tecwrite.write_surf_multi('surf.dat', surfs)
+tecwrite.write_surf_multi('output/surf.dat', surfs)
 
 writeBDF('output/mesh.bdf', nodes, bars+1)
 
@@ -60,7 +60,7 @@ surfs.append(xyz[:,  0, :, :])
 surfs.append(xyz[:, -1, :, :])
 surfs.append(xyz[ 0, :, :, :])
 surfs.append(xyz[-1, :, :, :])
-tecwrite.write_surf_multi('surf2.dat', surfs)
+tecwrite.write_surf_multi('output/surf2.dat', surfs)
 
 writeBDF('output/mesh2.bdf', nodes + sol.reshape(nodes.shape), bars+1)
 
