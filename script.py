@@ -18,8 +18,8 @@ u2 = 0.995
 EA = 10.0e9
 
 geom_file = 'CRM_AVL/wing_coarse.avl'
-upp_file = 'airfoils/rae2822_upp.txt’
-low_file = 'airfoils/rae2822_low.txt’
+upp_file = 'airfoils/rae2822_upp.txt'
+low_file = 'airfoils/rae2822_low.txt'
 results_file = 'CRM_AVL/results_coarse.txt'
 
 factor = 1
@@ -33,7 +33,7 @@ surfs.append(xyz[:,  0, :, :])
 surfs.append(xyz[:, -1, :, :])
 surfs.append(xyz[ 0, :, :, :])
 surfs.append(xyz[-1, :, :, :])
-tecwrite.write_surf_multi('surf.dat’, surfs)
+tecwrite.write_surf_multi('surf.dat', surfs)
 
 writeBDF('mesh.bdf', nodes, bars+1)
 
@@ -60,7 +60,7 @@ surfs.append(xyz[:,  0, :, :])
 surfs.append(xyz[:, -1, :, :])
 surfs.append(xyz[ 0, :, :, :])
 surfs.append(xyz[-1, :, :, :])
-tecwrite.write_surf_multi('surf2.dat’, surfs)
+tecwrite.write_surf_multi('surf2.dat', surfs)
 
 writeBDF('mesh2.bdf', nodes + sol.reshape(nodes.shape), bars+1)
 

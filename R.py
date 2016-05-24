@@ -13,9 +13,9 @@ import math
 def getR(totalFlag):
 
     # read in the data
-    constraints = loadtxt('data/data_constraints.dat')
-    elements = loadtxt('data/data_elems.dat')
-    nodes = loadtxt('data/data_nodes.dat')
+    constraints = loadtxt('output/data_constraints.dat')
+    elements = loadtxt('output/data_elems.dat')
+    nodes = loadtxt('output/data_nodes.dat')
 
     # convert them to matrix form
     constraints =np. matrix(constraints)
