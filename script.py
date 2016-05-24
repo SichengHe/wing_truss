@@ -6,7 +6,7 @@ May, 2016
 '''
 
 from __future__ import division
-import numpy
+import numpy as numpy
 import pylab
 from utils import setup_problem, writeBDF, get_matrix, solve
 import tecwrite
@@ -75,9 +75,13 @@ numpy.savetxt('output/data_forces.dat', forces)
 
 import R
 Rmat = numpy.matrix(R.getR(False)) # without the fixed pts
-Rmat_fixpts = numpy.matrix(R.getR(True)) # with the fixed points
+
+max_list = (numpy.amax(Rmat, axis=1)).tolist
+#print(';;;;;;;;;;;;;;;;;;;;;;;', numpy.min(max_list),max_list.index(min(max_list)))
+
+#Rmat_fixpts = numpy.matrix(R.getR(True)) # with the fixed points
 numpy.savetxt('output/data_Rmat_2x.dat', Rmat)
-numpy.savetxt('output/data_Rmat_fixpts_2x.dat', Rmat_fixpts)
+#numpy.savetxt('output/data_Rmat_fixpts_2x.dat', Rmat_fixpts)
 
 
 
@@ -107,3 +111,31 @@ for i in range(numx):
 sol2 = numpy.asarray(sol2)
 writeBDF('output/mesh3.bdf', nodes + sol2.reshape(nodes.shape), bars+1)
 Kmat1 = Kmat.todense()
+
+
+
+# less nodes (load not implemented)
+
+factor = 0.25
+
+xyz, nodes, bars, constrained = setup_problem(u1, u2, geom_file, upp_file, low_file, results_file,factor)
+
+surfs = []
+surfs.append(xyz[:, :,  0, :])
+surfs.append(xyz[:, :, -1, :])
+surfs.append(xyz[:,  0, :, :])
+surfs.append(xyz[:, -1, :, :])
+surfs.append(xyz[ 0, :, :, :])
+surfs.append(xyz[-1, :, :, :])
+tecwrite.write_surf_multi('output/surf.dat', surfs)
+
+writeBDF('output/mesh.bdf', nodes, bars+1)
+
+
+numpy.savetxt('output/data_nodes.dat', nodes)
+numpy.savetxt('output/data_elems.dat', bars)
+numpy.savetxt('output/data_constraints.dat', constrained)
+
+Rmat = numpy.matrix(R.getR(False)) # without the fixed pts
+
+numpy.savetxt('output/data_Rmat_025x.dat', Rmat)

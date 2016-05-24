@@ -103,6 +103,7 @@ def getR(totalFlag):
             R=np.delete(R,3*conNode+1,0)
             R=np.delete(R,3*conNode+0,0)
 
-    print('eig00000000000',np.linalg.eig(R.dot(np.transpose(R))))
+    print('eig00000000000',(np.linalg.eig(R.dot(np.transpose(R))))[0])
+
 
     return R

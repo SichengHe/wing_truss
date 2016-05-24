@@ -116,8 +116,8 @@ def read_files(u1, u2, geom_file, upp_file, low_file, results_file, factor):
     #  2 y v span-wise
     #  3 z w vertical
 
-    num1 = num_chord*factor + 1
-    num2 = num_span*factor + 1
+    num1 = int(num_chord*factor + 1)
+    num2 = int(num_span*factor + 1)
     num3 = 2
 
     uvw = numpy.zeros((num1, num2, num3, 3))
@@ -262,8 +262,6 @@ def setup_problem(u1, u2, geom_file, upp_file, low_file, results_file,factor):
     bars = numpy.zeros((num, 2), int)
     counter = 0
 
-    print('+++++++++',num1,num2,num3)
-
     # x-edges
     for ind1 in xrange(num1-1):
         for ind2 in xrange(num2-1):
@@ -325,41 +323,45 @@ def setup_problem(u1, u2, geom_file, upp_file, low_file, results_file,factor):
     constrained = indices[:, 0, :].flatten()
 
     # loads
-    Q = 0.5 * 0.4135 * 280**2
+    if (factor>=1):
+        Q = 0.5 * 0.4135 * 280**2
 
-    num1_org = int((num1-1)/factor)
-    num2_org = int((num2-1)/factor)
+        num1_org = int((num1-1)/factor)
+        num2_org = int((num2-1)/factor)
 
-    for ind2 in xrange(num2_org-1):
-        pressure[:, ind2] *= strip_area[ind2] / (num1_org-1) * Q
+        for ind2 in xrange(num2_org-1):
+            pressure[:, ind2] *= strip_area[ind2] / (num1_org-1) * Q
 
-    forces = numpy.zeros((num1, num2, num3, 3))
-    for i in range(num1_org):
-        for j in range(num2_org):
-            for k in range(num3):
+        forces = numpy.zeros((num1, num2, num3, 3))
+        for i in range(num1_org):
+            for j in range(num2_org):
+                for k in range(num3):
 
-                force_persurf_loc = pressure[i,j]/2.0
-                force_distri_loc = force_persurf_loc/(factor**2)
-                force_aux_mat = numpy.zeros((factor,factor,3))
-                force_aux_mat[:,:,2] += force_distri_loc
+                    force_persurf_loc = pressure[i,j]/2.0
+                    force_distri_loc = force_persurf_loc/(factor**2)
+                    force_aux_mat = numpy.zeros((factor,factor,3))
+                    force_aux_mat[:,:,2] += force_distri_loc
 
-                force_pernode_loc = numpy.zeros((factor+1,factor+1,3))
+                    force_pernode_loc = numpy.zeros((factor+1,factor+1,3))
 
-                force_pernode_loc[:-1, :-1, 2] += force_aux_mat[:,:,2]
-                force_pernode_loc[ 1:, :-1, 2] += force_aux_mat[:,:,2]
-                force_pernode_loc[:-1,  1:, 2] += force_aux_mat[:,:,2]
-                force_pernode_loc[ 1:,  1:, 2] += force_aux_mat[:,:,2]
+                    force_pernode_loc[:-1, :-1, 2] += force_aux_mat[:,:,2]
+                    force_pernode_loc[ 1:, :-1, 2] += force_aux_mat[:,:,2]
+                    force_pernode_loc[:-1,  1:, 2] += force_aux_mat[:,:,2]
+                    force_pernode_loc[ 1:,  1:, 2] += force_aux_mat[:,:,2]
 
-                for s in range(factor+1):
-                    for t in range(factor+1):
+                    for s in range(factor+1):
+                        for t in range(factor+1):
 
-                        indx_glo = i*(factor)+s
-                        indy_glo = j*(factor)+t
+                            indx_glo = i*(factor)+s
+                            indy_glo = j*(factor)+t
 
-                        forces[indx_glo,indy_glo,k,2] += force_pernode_loc[s,t,2]
+                            forces[indx_glo,indy_glo,k,2] += force_pernode_loc[s,t,2]
 
 
-    return xyz, nodes, bars, constrained, forces.reshape((num_nodes, 3)),forces 
+        return xyz, nodes, bars, constrained, forces.reshape((num_nodes, 3)),forces
+    else:
+        return xyz, nodes, bars, constrained
+
 
 
 
