@@ -8,14 +8,14 @@ import numpy
 import time
 
 from openmdao.api import IndepVarComp, Problem, Group, ScipyOptimizer, SqliteRecorder, pyOptSparseDriver
-from stiffness import SysDispAug, SysDisplacements, SysCompliance, SysVolume
+from stiffness import SysDispAug, SysDisplacements, SysCompliance, SysVolume, SysStress, SysKS
 from utils import setup_problem, writeBDF
 from openmdao.devtools.partition_tree_n2 import view_tree
 
 
 
 E = 100.0e9
-
+s0 = 0.215e9
 
 u1 = 0.005
 u2 = 0.995
@@ -45,6 +45,12 @@ root.add('sys_compliance',
          promotes=['*'])
 root.add('sys_volume',
          SysVolume(elements, numpy.ones(len(elements))),
+         promotes=['*'])
+root.add('sys_stress',
+         SysStress(nodes, elements, E, s0),
+         promotes=['*'])
+root.add('sys_ks',
+         SysKS(elements, 1.0),
          promotes=['*'])
 
 prob = Problem()
@@ -76,8 +82,9 @@ prob.driver.opt_settings = {'Major optimality tolerance': 1.0e-7,
 }
 
 prob.driver.add_desvar('areas',lower=0.0001, upper=0.1, scaler=1e0) # test
-prob.driver.add_objective('compliance', scaler=1e0)
-prob.driver.add_constraint('volume', upper=0.5) #0.630832724832)
+prob.driver.add_objective('volume', scaler=1e0)
+prob.driver.add_constraint('minstress', upper=0.)
+prob.driver.add_constraint('maxstress', upper=0.)
 # setup data recording
 prob.driver.add_recorder(SqliteRecorder('data.db'))
 prob.setup()

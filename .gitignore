@@ -5,4 +5,8 @@
 *.db
 *.out
 *.so
+*.png
+*.avi
+*.mp4
+*.res
 *~

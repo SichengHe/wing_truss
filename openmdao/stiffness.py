@@ -40,6 +40,37 @@ class SysDispAug(Component):
         self.rhs = numpy.zeros(3*num_nodes + 3*num_cons)
         self.rhs[:3*num_nodes] = loads
         self.E = E
+
+
+        
+        nodes = self.nodes
+        elems = self.elements
+        cons = self.cons
+        E = self.E
+
+        num_nodes = nodes.shape[0]
+        num_elems = elems.shape[0]
+        num_cons = cons.shape[0]
+
+        nnz = 36 * num_elems + 2 * 3 * num_cons
+
+        data, self.rows, self.cols = lib.getmtx(num_nodes, num_elems, num_cons, nnz,
+                                      E, nodes, elems+1, numpy.ones(num_elems), cons+1)
+
+
+
+        nodes = self.nodes
+        elems = self.elements
+        cons = self.cons
+        E = self.E
+
+        num_nodes = nodes.shape[0]
+        num_elems = elems.shape[0]
+        num_cons = cons.shape[0]
+        nnz = 36 * num_elems
+
+        out = lib.getresder2(num_nodes, num_elems, nnz, E, nodes, elems+1)
+        self.data2, self.rows2, self.cols2, self.ind_aug2 = out
         
 #        self.deriv_options['type'] = 'cs'
 #        self.deriv_options['form'] = 'central'
@@ -172,11 +203,11 @@ class SysDispAug(Component):
 
             nnz = 36 * num_elems + 2 * 3 * num_cons
 
-            data, rows, cols = lib.getmtx(num_nodes, num_elems, num_cons, nnz,
-                                          E, nodes, elems+1, areas, cons+1)
+            data = lib.getmtx2(num_nodes, num_elems, nnz,
+                               E, nodes, elems+1, areas)
 
             size = 3 * num_nodes + 3 * num_cons
-            mat = scipy.sparse.csc_matrix((data, (rows, cols)),
+            mat = scipy.sparse.csc_matrix((data, (self.rows, self.cols)),
                                           shape=(size, size))
 
         t1 = time.time()
@@ -215,24 +246,41 @@ class SysDispAug(Component):
     def linearize(self, params, unknowns, resids):
         self.lu_T = scipy.sparse.linalg.splu(self.mat.T)
 
-        nodes = self.nodes
-        elems = self.elements
-        cons = self.cons
-        disp_aug = unknowns['disp_aug']
-        E = self.E
-
-        num_nodes = nodes.shape[0]
-        num_elems = elems.shape[0]
-        num_cons = cons.shape[0]
-        num_aug = disp_aug.shape[0]
-        nnz = 36 * num_elems
+        if 1:
+            nodes = self.nodes
+            elems = self.elements
+            cons = self.cons
+            disp_aug = unknowns['disp_aug']
+            E = self.E
+            
+            num_nodes = nodes.shape[0]
+            num_elems = elems.shape[0]
+            num_cons = cons.shape[0]
+            num_aug = disp_aug.shape[0]
+            nnz = 36 * num_elems
+            
+            data, rows, cols = lib.getresder(num_nodes, num_elems, num_aug, nnz,
+                                             E, nodes, elems+1, disp_aug)
+            
+            size = 3 * num_nodes + 3 * num_cons
+            mat = scipy.sparse.csc_matrix((data, (rows, cols)),
+                                          shape=(size, num_elems))
+            
+        else:
+            nodes = self.nodes
+            elems = self.elements
+            cons = self.cons
+            disp_aug = unknowns['disp_aug']
         
-        data, rows, cols = lib.getresder(num_nodes, num_elems, num_aug, nnz,
-                                         E, nodes, elems+1, disp_aug)
+            num_nodes = nodes.shape[0]
+            num_elems = elems.shape[0]
+            num_cons = cons.shape[0]
+        
+            data = self.data2 * disp_aug[self.ind_aug2]
 
-        size = 3 * num_nodes + 3 * num_cons
-        mat = scipy.sparse.csc_matrix((data, (rows, cols)),
-                                      shape=(size, num_elems))
+            size = 3 * num_nodes + 3 * num_cons
+            mat = scipy.sparse.csc_matrix((data, (self.rows2, self.cols2)),
+                                          shape=(size, num_elems))
         
         jac = {} # self.alloc_jacobian()
         jac['disp_aug', 'disp_aug'] = self.mat
@@ -330,3 +378,139 @@ class SysVolume(Component):
         jac = {}
         jac['volume', 'areas'] = self.lengths.reshape((1, self.n))
         return jac
+
+
+
+
+class SysStress(Component):
+
+    def __init__(self, nodes, elems, E, s0):
+        super(SysStress, self).__init__()
+        
+        self.nodes = nodes
+        self.elems = elems
+        self.E = E
+        self.s0 = s0
+
+        self.add_param('disp', val=numpy.zeros((nodes.shape[0], 3)))
+        self.add_output('stress', val=numpy.zeros(elems.shape[0]))
+        
+        nodes = self.nodes
+        elems = self.elems
+        E = self.E
+        s0 = self.s0
+
+        num_nodes = nodes.shape[0]
+        num_elems = elems.shape[0]
+        nnz = 2 * 3 * num_elems
+        
+        data, rows, cols = lib.getstressder(num_nodes, num_elems, nnz,
+                                            E, nodes, elems+1)
+        data /= s0
+        self.mat = scipy.sparse.csc_matrix((data, (rows, cols)),
+                                           shape=(num_elems, 3 * num_nodes))
+
+    def solve_nonlinear(self, params, unknowns, resids):
+        nodes = self.nodes
+        elems = self.elems
+        E = self.E
+        s0 = self.s0
+
+        num_nodes = nodes.shape[0]
+        num_elems = elems.shape[0]
+        
+        #unknowns['stress'] = lib.getstresses(num_nodes, num_elems,
+        #                                     E, nodes, elems+1, params['disp']) / s0
+        unknowns['stress'] = self.mat.dot(params['disp'].flatten())
+        
+    def linearize(self, params, unknowns, resids):
+        '''
+        nodes = self.nodes
+        elems = self.elems
+        E = self.E
+        s0 = self.s0
+
+        num_nodes = nodes.shape[0]
+        num_elems = elems.shape[0]
+        nnz = 2 * 3 * num_elems
+        
+        data, rows, cols = lib.getstressder(num_nodes, num_elems, nnz,
+                                            E, nodes, elems+1)
+        data /= s0
+        mat = scipy.sparse.csc_matrix((data, (rows, cols)),
+                                      shape=(num_elems, 3 * num_nodes))
+        '''
+        
+        jacs = {}
+        jacs['stress', 'disp'] = self.mat
+        
+        return jacs
+
+
+
+class SysKS(Component):
+    """ Aggregates failure constraints from the structure """
+
+    def __init__(self, elems, s0, rho=10):
+        super(SysKS, self).__init__()
+
+        self.n = elems.shape[0]
+        self.s0 = s0
+        self.rho = rho
+
+        self.add_param('stress', val=numpy.zeros(self.n))
+        self.add_output('minstress', val=0.)
+        self.add_output('maxstress', val=0.)
+
+    def solve_nonlinear(self, params, unknowns, resids):
+        s0 = self.s0
+        rho = self.rho
+        stress = params['stress']
+
+        fmin = -s0 - stress
+        fmax =  stress - s0
+
+        maxfmin = numpy.max(fmin)
+        maxfmax = numpy.max(fmax)
+
+        unknowns['minstress'] = maxfmin + 1 / rho * \
+                                numpy.log(numpy.sum(numpy.exp(rho*(fmin - maxfmin))))
+        unknowns['maxstress'] = maxfmax + 1 / rho * \
+                                numpy.log(numpy.sum(numpy.exp(rho*(fmax - maxfmax))))
+
+    def linearize(self, params, unknowns, resids):
+        n = self.n
+        s0 = self.s0
+        rho = self.rho
+        stress = params['stress']
+
+        fmin = -s0 - stress
+        fmax =  stress - s0
+        sgnmin = -1.0
+        sgnmax =  1.0
+
+        indmin = numpy.argmax(fmin)
+        indmax = numpy.argmax(fmax)
+        maxfmin = fmin[indmin]
+        maxfmax = fmax[indmax]
+
+        dmaxfmin_ds = numpy.zeros(self.n)
+        dmaxfmax_ds = numpy.zeros(self.n)
+        dmaxfmin_ds[indmin] = sgnmin * 1.0
+        dmaxfmax_ds[indmax] = sgnmax * 1.0
+
+        datamin = dmaxfmin_ds + 1/rho * 1.0 /\
+                  numpy.sum(numpy.exp(rho * (fmin - maxfmin))) * \
+                  numpy.exp(rho * (fmin - maxfmin)) * (sgnmin * rho)
+        datamax = dmaxfmax_ds + 1/rho * 1.0 /\
+                  numpy.sum(numpy.exp(rho * (fmax - maxfmax))) * \
+                  numpy.exp(rho * (fmax - maxfmax)) * (sgnmax * rho) 
+        datamin[indmin] -= 1/rho * sgnmin * rho
+        datamax[indmax] -= 1/rho * sgnmax * rho
+
+        jacs = {}
+        jacs['minstress', 'stress'] = datamin.reshape((1, self.n))
+        jacs['maxstress', 'stress'] = datamax.reshape((1, self.n))
+        return jacs
+        
+        
