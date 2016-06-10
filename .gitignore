@@ -1,4 +1,8 @@
 *.bdf
 *.pyc
-*.py~
 *.dat
+*.html
+*.db
+*.out
+*.so
+*~
